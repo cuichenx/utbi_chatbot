@@ -1,0 +1,8 @@
+how to add filter
+https://www.tableau.com/search#q=how to add filter&t=support
+Adding Filters to Dashboards
+https://kb.tableau.com/articles/HowTo/adding-filters-to-dashboards
+How To Apply The Same Filter With And Without Context To Different Sheets In A Dashboard
+https://kb.tableau.com/articles/HowTo/How-To-Apply-The-Same-Filter-With-And-Without-Context-To-Different-Sheets-In-A-Dashboard
+How To Add Pictures For Every Row In A Table That Changes With Filter Selection
+https://kb.tableau.com/articles/HowTo/How-To-Add-Pictures-For-Every-Row-In-A-Table-That-Changes-With-Filter-Selection
