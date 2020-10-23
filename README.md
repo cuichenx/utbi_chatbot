@@ -4,6 +4,8 @@ this is a utbi chatbot description
 
 This bot has been created using [Bot Framework](https://dev.botframework.com), it shows how to create a simple bot that accepts input from the user and echoes it back.
 
+This bot can provide Tableau technical help for UTBI users by searching throught its Knowledge Base (currently built from UTBI FAQ page) and the community forum & support documents of Tableau.
+
 ## Prerequisites
 
 This sample **requires** prerequisites in order to run.
