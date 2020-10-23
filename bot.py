@@ -40,6 +40,7 @@ class SuggestActionsBot(ActivityHandler):
                 host=config.QNA_ENDPOINT_HOST,
             )
         )
+        self.tableau = ''
 
     async def on_members_added_activity(
         self, members_added: [ChannelAccount], turn_context: TurnContext
@@ -56,6 +57,17 @@ class SuggestActionsBot(ActivityHandler):
         """
 
         text = turn_context.activity.text.lower()
+        if self.tableau and text.startswith('y'):
+            await self.search_tableau(turn_context, self.tableau)
+            self.tableau = ''
+            await self._send_suggested_actions(turn_context, first_time=False)
+            return
+        elif self.tableau:
+            self.tableau = ''
+            await turn_context.send_activity(r"If it's not about Tableau then idk what to do")
+            await self._send_suggested_actions(turn_context, first_time=False)
+            return
+
         response_text = self._process_input1(text)
         if not response_text:
             print()
@@ -63,8 +75,7 @@ class SuggestActionsBot(ActivityHandler):
         else:
 
             await turn_context.send_activity(MessageFactory.text(response_text))
-
-            await turn_context.send_activity("Can I help you with anything else today?")
+            await self._send_suggested_actions(turn_context, first_time=False)
 
             #await self.on_message_activity
             #await self._classify_request(turn_context, turn_context.activity.text)
@@ -85,37 +96,38 @@ class SuggestActionsBot(ActivityHandler):
     async def _classify_request(self, turn_context: TurnContext, intent:str):
         #intent = None  ### replace with classifier output later ??
 
-        if intent == 'hello':
-            return await self._send_welcome_message(turn_context)
+        # if intent == 'hello':
+        #     return await self._send_welcome_message(turn_context)
         if intent == 'nothing else':
             return await turn_context.send_activity("cool cool cool, bye!")
-        elif intent == "ticketing system" or 'license' in intent.lower():
+        elif any(x in intent.lower() for x in ('license', 'training', 'ticketing')):
             await turn_context.send_activity(f"This is the link to the Tableau ticketing system: https://uthrprod.service-now.com")
-        elif intent == "access":
-            await turn_context.send_activity(f"Please fill out this form and email it to UTBI")
+
         else:
             # response = await self.qna_maker.get_answers(turn_context)
             result = await self.qna_maker.get_answers_raw(turn_context)
             response = result.answers
 
-            if response and len(response) > 0 and response[0].score > 0.3 :
+            if response and len(response) > 0 and response[0].score > 0.5 :
                 await turn_context.send_activity(MessageFactory.text(response[0].answer+f" (score {response[0].score})"))
             else:
-                await turn_context.send_activity("I'm not sure. 🤔")
+                await turn_context.send_activity("I didn't find any answer on the UTBI KB 🤔")
 
                 if 'tableau' in intent.lower():
-                    await turn_context.send_activity("I'm looking for answers online...")
-                    query_url = get_query_url(SEARCH_URL, intent, None)
-                    for res_title, res_url in get_search_results(query_url):
-                        await turn_context.send_activity(f"[{res_title}]({res_url})")
+                    await self.search_tableau(turn_context, intent)
                 else:
+                    self.tableau = intent
                     # google search?
                     ...
-                    await turn_context.send_activity(r"Idk man ¯\_(ツ)_/¯")
-                    await turn_context.send_activity(r"Let me ask my manager")
 
-        await turn_context.send_activity("Can I help you with anything else today?")
 
+        await self._send_suggested_actions(turn_context, first_time=False)
+
+    async def search_tableau(self, turn_context, intent):
+        await turn_context.send_activity("I'm looking for answers on the Tableau Forum...")
+        query_url = get_query_url(SEARCH_URL, intent, None)
+        for res_title, res_url in get_search_results(query_url):
+            await turn_context.send_activity(f"[{res_title}]({res_url})")
 
     def _process_input1(self, text: str):
 
@@ -125,40 +137,77 @@ class SuggestActionsBot(ActivityHandler):
         if text == "cognos_status":
             return f"Cognos server is currently down. We apologize for the inconvenience! T___T"
 
+        if text == "access_form":
+            return "Please fill out this form and email it to UTBI"
+
         else:
             return ""
         
 
         
 
-    async def _send_suggested_actions(self, turn_context: TurnContext):
+    async def _send_suggested_actions(self, turn_context: TurnContext, first_time=True):
         """
         Creates and sends an activity with suggested actions to the user. When the user
         clicks one of the buttons the text value from the "CardAction" will be displayed
         in the channel just as if the user entered the text. There are multiple
         "ActionTypes" that may be used for different situations.
         """
+        if not self.tableau:
+            if first_time:
+                msg = "Do you need info on the following? If not, please lemme know what I can help you with today?"
+            else:
+                msg = "Can I help you with anything else today?"
+            reply = MessageFactory.text(msg)
 
-        reply = MessageFactory.text("Do you need info on the following? If not, please lemme know what I can help you with today?")
+            reply.suggested_actions = SuggestedActions(
+                actions=[
+                    CardAction(
+                        title="Check tableau status",
+                        type=ActionTypes.im_back,
+                        value="tableau_status",
+                        # image="https://via.placeholder.com/20/FF0000?text=R",
+                        # image_alt_text="R",
+                    ),
+                    CardAction(
+                        title="Check cognos status",
+                        type=ActionTypes.im_back,
+                        value="cognos_status",
+                        # image="https://via.placeholder.com/20/FFFF00?text=Y",
+                        # image_alt_text="Y",
+                    ),
+                    CardAction(
+                        title="UTBI Access forms",
+                        type=ActionTypes.im_back,
+                        value="access_form",
+                        # image="https://via.placeholder.com/20/FFFF00?text=Y",
+                        # image_alt_text="Y",
+                    ),
+                ]
+            )
 
-        reply.suggested_actions = SuggestedActions(
-            actions=[
-                CardAction(
-                    title="Check tableau status",
-                    type=ActionTypes.im_back,
-                    value="tableau_status",
-                    #image="https://via.placeholder.com/20/FF0000?text=R",
-                    #image_alt_text="R",
-                ),
-                CardAction(
-                    title="Check cognos status",
-                    type=ActionTypes.im_back,
-                    value="cognos_status",
-                    #image="https://via.placeholder.com/20/FFFF00?text=Y",
-                    #image_alt_text="Y",
-                ),
-            ]
-        )
+        else: # Tableau multiturn
+            reply = MessageFactory.text("Is this question about Tableau?")
+            reply.suggested_actions = SuggestedActions(
+                actions=[
+                    CardAction(
+                        title="Yes",
+                        type=ActionTypes.im_back,
+                        value="yes tableau",
+                        # image="https://via.placeholder.com/20/FF0000?text=R",
+                        # image_alt_text="R",
+                    ),
+                    CardAction(
+                        title="No",
+                        type=ActionTypes.im_back,
+                        value="not tableau",
+                        # image="https://via.placeholder.com/20/FFFF00?text=Y",
+                        # image_alt_text="Y",
+                    ),
+                ]
+            )
+
 
         return await turn_context.send_activity(reply)
+
 
