@@ -3,7 +3,7 @@
 from botbuilder.ai.qna import QnAMaker, QnAMakerEndpoint
 from botbuilder.core import ActivityHandler, TurnContext, MessageFactory
 from botbuilder.schema import ChannelAccount, CardAction, ActionTypes, SuggestedActions
-
+from response_strings import *
 from config import DefaultConfig
 from search_tableau_KB import get_search_results, get_query_url
 
@@ -16,10 +16,11 @@ from nltk.tokenize import RegexpTokenizer
 tokenizer = RegexpTokenizer(r'\w+')
 stop = stopwords.words('english')
 stop += ['michael', 'mike', 'thank', 'thanks', 'hi', 'hello', 'question', 'hey', 'could']
+stop += ['assist', 'please', 'help']
 [stop.remove(w) for w in ['down', 'up']]
 
-yes_response = []  # TODO
-no_response = []
+yes_response = ['y', 'yes', 'yeah', 'sure', 'of course', 'yep', 'ok']  # TODO
+no_response = ['n', 'no', 'nope', 'not really', 'not exactly', 'nah', 'nothing', 'nothing else']
 
 class MyBot(ActivityHandler):
     # See https://aka.ms/about-bot-activity-message to learn more about the message and other activity types.
@@ -78,20 +79,23 @@ class SuggestActionsBot(ActivityHandler):
         text = turn_context.activity.text.lower()
 
         if self.multiturn_state == 'rate':
-            if text.startswith('y'):
+            if text in yes_response:
                 print('user rated yes')
                 self.log_user_feedback('Y')
                 self.multiturn_state = ''
-                await turn_context.send_activity("Thank you for your feedback")
+                await turn_context.send_activity("Thank you for your feedback. Glad I could help!")
                 return await self._send_suggested_actions(turn_context, first_time=False)
 
-            elif text.startswith('n'):
+            elif text in no_response:
                 print('user rated no')
                 self.log_user_feedback('N')
                 self.multiturn_state = ''
                 self.tableau = True
                 # await turn_context.send_activity("")
                 return await self._send_suggested_actions(turn_context, first_time=False, after_feedback=True)
+
+            else:
+                self.multiturn_state = ''  # user enters another question rather than rating. clear rating state
 
 
         if self.tableau and text.startswith('y'):
@@ -103,9 +107,8 @@ class SuggestActionsBot(ActivityHandler):
         elif self.tableau:
             self.tableau = False
             if text.startswith('n'):
-                await turn_context.send_activity(r"It looks like my suggestions haven't been helpful. Could you tell me what you're looking for in another way?")
-
-                await self._send_suggested_actions(turn_context, first_time=False)
+                await self._send_suggested_actions(turn_context, first_time=False,
+                            custom_text="It looks like my suggestions haven't been helpful. Could you tell me what you're looking for in another way?")
                 return
 
         # normal questions
@@ -131,7 +134,7 @@ class SuggestActionsBot(ActivityHandler):
                     #     f"I will do my best to answer your questions (ง •̀_•́)ง !"
                     # )
                     MessageFactory.text(
-                    f" Hello {member.name} :D ! Hope you are well\n\n"
+                    f" Hello {member.name}! This is the UTBI chatbot\n\n"
                     f"I will do my best to answer your questions!"
                 )
                 )
@@ -145,10 +148,17 @@ class SuggestActionsBot(ActivityHandler):
 
         # if intent == 'hello':
         #     return await self._send_welcome_message(turn_context)
-        if intent == 'nothing else':
-            return await turn_context.send_activity("cool cool cool, bye!")
-        elif any(x in intent.lower() for x in ('training', 'ticketing')):
-            await turn_context.send_activity(f"This is the link to the Tableau ticketing system: https://uthrprod.service-now.com")
+        if intent in no_response:
+            return await turn_context.send_activity("Have a nice day!")
+        elif 'training' in intent:
+            await turn_context.send_activity(
+                f"To book a Tableau training session, please go to the [ticketing system]"
+                f"(https://uthrprod.service-now.com/sp?id=sc_cat_item&sys_id=14e6cae9dbee501052e7f8f339961982) "
+                f"and select \"Tableau Training\" in request type.")
+        elif 'ticketing' in intent:
+            await turn_context.send_activity(
+                f"Are you looking for the [Tableau ticketing system]"
+                f"(https://uthrprod.service-now.com/sp?id=sc_cat_item&sys_id=14e6cae9dbee501052e7f8f339961982) ?")
 
         else:
             # response = await self.qna_maker.get_answers(turn_context)
@@ -160,6 +170,7 @@ class SuggestActionsBot(ActivityHandler):
                     print('MORE THAN ONE RESPONSE??')
                 if response[0].source.startswith('qna_chitchat'):
                     txt = response[0].answer
+                    return await self._send_suggested_actions(turn_context, first_time=False, custom_text=txt)
                 else:  # serious question, not chitchat
                     question = response[0].questions[0]
                     txt = (f"**I think you are asking about this question:** \n\n "
@@ -169,7 +180,7 @@ class SuggestActionsBot(ActivityHandler):
                 await turn_context.send_activity(MessageFactory.text(txt))
 
             else:
-                await turn_context.send_activity("I didn't find any answer on the UTBI KB 🤔")
+                # await turn_context.send_activity("I didn't find any answer on the UTBI KB 🤔")
 
                 if 'tableau' in intent.lower() or 'dashboard' in intent.lower():
                     await turn_context.send_activity("I'm looking for answers on the Tableau Forum...")
@@ -189,7 +200,7 @@ class SuggestActionsBot(ActivityHandler):
         for res_title, res_url in get_search_results(query_url):
             empty_res = False
             await turn_context.send_activity(f"[{res_title}]({res_url})")
-        await turn_context.send_activity(f"[(Show more results)]({query_url.replace(' ', '%20')})")
+        await turn_context.send_activity(f"[(Show more results on Tableau site)]({query_url.replace(' ', '%20')})")
         if empty_res:
             await turn_context.send_activity(f"I didn't find anything on the Tableau Forum..")
 
@@ -201,24 +212,20 @@ class SuggestActionsBot(ActivityHandler):
 
 
     def _process_input1(self, text: str):
+        d = {
+            "tableau_status": f"If you have not received any email, the server should be up! If you have trouble connecting to it, you might want to check your vpn connection?",
+            "cognos_status": f"Cognos server is currently down. We apologize for the inconvenience!",
+            "access_form": "Please fill out this [form](https://easi.its.utoronto.ca/wp-content/uploads/2016/09/UTBI-Request-Form.pdf) and email it to UTBI",
+            "vpn" : STR_VPN_INSTRUCTIONS,
+        }
 
-        if text == "tableau_status":
-            return f"If you have not received any email, the server should be up! If you have trouble connecting to it, you might want to check your vpn connection?"
-
-        if text == "cognos_status":
-            return f"Cognos server is currently down. We apologize for the inconvenience! T___T"
-
-        if text == "access_form":
-            return "Please fill out this [form](https://easi.its.utoronto.ca/wp-content/uploads/2016/09/UTBI-Request-Form.pdf) and email it to UTBI"
-
-        else:
-            return ""
+        return d.get(text, '')
         
     def log_user_feedback(self, feedback):
         with open('user_feedback.txt', 'a+') as f:
             f.write(f'{self.last_question}, {feedback} \n')
 
-    async def _send_suggested_actions(self, turn_context: TurnContext, first_time=True, after_feedback=False):
+    async def _send_suggested_actions(self, turn_context: TurnContext, first_time=True, after_feedback=False, custom_text=None):
         """
         Creates and sends an activity with suggested actions to the user. When the user
         clicks one of the buttons the text value from the "CardAction" will be displayed
@@ -228,7 +235,7 @@ class SuggestActionsBot(ActivityHandler):
 
         if self.tableau: # Tableau multiturn
             if after_feedback:
-                reply = MessageFactory.text("Thank you for your feedback. Would you like to look this up on the tableau forum?")
+                reply = MessageFactory.text("Thank you for your feedback, and sorry I couldn't help. Would you like to look this up on the tableau forum?")
             else:
                 reply = MessageFactory.text("Is this question about Tableau?")
             reply.suggested_actions = SuggestedActions(
@@ -268,7 +275,9 @@ class SuggestActionsBot(ActivityHandler):
             )
 
         else:
-            if first_time:
+            if custom_text is not None:
+                msg = custom_text
+            elif first_time:
                 msg = "Do you need info on the following? If not, please lemme know what I can help you with today?"
             else:
                 msg = "Can I help you with anything else today?"
@@ -294,6 +303,13 @@ class SuggestActionsBot(ActivityHandler):
                         title="UTBI Access forms",
                         type=ActionTypes.im_back,
                         value="access_form",
+                        # image="https://via.placeholder.com/20/FFFF00?text=Y",
+                        # image_alt_text="Y",
+                    ),
+                    CardAction(
+                        title="VPN Instructions",
+                        type=ActionTypes.im_back,
+                        value="vpn",
                         # image="https://via.placeholder.com/20/FFFF00?text=Y",
                         # image_alt_text="Y",
                     ),

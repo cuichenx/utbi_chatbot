@@ -1,2 +1,7 @@
-botbuilder-core>=4.7.0
-aiohttp
+botbuilder-core==4.10.1
+botbuilder-ai==4.10.1
+botbuilder-dialogs==4.10.1
+aiohttp==3.6.2
+nltk
+selenium
+beautifulsoup4

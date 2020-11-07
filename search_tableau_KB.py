@@ -1,8 +1,8 @@
 from bs4 import BeautifulSoup
-from bs4 import Tag, NavigableString
+# from bs4 import Tag, NavigableString
 from selenium import webdriver
 from scraping import wait
-
+import os
 QUERY = 'how to add filter'
 SEARCH_URL = 'https://www.tableau.com/search#t=support'
 OUT_FILE = "tableau_kb_search_test.txt"
@@ -14,7 +14,13 @@ options.add_argument("--headless")
 
 def get_search_results(URL, out_file=None, num_res=3):
     # driver = webdriver.Firefox(executable_path=r"D:\geckodriver-v0.27.0-win64\geckodriver.exe")
-    driver = webdriver.Firefox(executable_path="/home/cuichenx/Tools/geckodriver", firefox_options=options)
+    if os.name == 'posix':
+        driver_path = './drivers/linux64/geckodriver'
+    elif os.name == 'nt':
+        driver_path = './drivers/win64/geckodriver.exe'
+    else:
+        raise Exception(f"Unknown os.name: {os.name}")
+    driver = webdriver.Firefox(executable_path=driver_path, firefox_options=options)
     driver.get(URL)
     wait(1, driver)
 
