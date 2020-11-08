@@ -197,9 +197,9 @@ class SuggestActionsBot(ActivityHandler):
         
         # query_url = get_query_url(SEARCH_URL, processed_query, None)
         empty_res = True
-        for res_title, res_url in get_search_results(processed_query):
+        for res_title, res_url, res_summary in get_search_results(processed_query):
             empty_res = False
-            await turn_context.send_activity(f"[{res_title}]({res_url})")
+            await turn_context.send_activity(f"[{res_title}]({res_url})\n{res_summary}")
         await turn_context.send_activity(f"[(Show more results on Tableau site)]({query_url.replace(' ', '%20')})")
         if empty_res:
             await turn_context.send_activity(f"I didn't find anything on the Tableau Forum..")
