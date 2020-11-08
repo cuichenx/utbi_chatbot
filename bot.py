@@ -264,7 +264,7 @@ class SuggestActionsBot(ActivityHandler):
                     CardAction(
                         title="Yes",
                         type=ActionTypes.im_back,
-                        value="yea",
+                        value="yes",
                     ),
                     CardAction(
                         title="No",
