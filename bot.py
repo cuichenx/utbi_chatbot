@@ -5,8 +5,8 @@ from botbuilder.core import ActivityHandler, TurnContext, MessageFactory
 from botbuilder.schema import ChannelAccount, CardAction, ActionTypes, SuggestedActions
 from response_strings import *
 from config import DefaultConfig
-from search_tableau_KB import get_search_results, get_query_url
-
+# from search_tableau_KB import get_search_results, get_query_url
+from search_TB_on_google import get_search_results
 import nltk
 
 nltk.download(['stopwords', 'punkt'])
@@ -38,7 +38,7 @@ class MyBot(ActivityHandler):
                 await turn_context.send_activity("Hello and welcome!")
 
 QUERY = 'how to add filter'
-SEARCH_URL = 'https://www.tableau.com/search#t=support'
+# SEARCH_URL = 'https://www.tableau.com/search#t=support'
 OUT_FILE = "tableau_kb_search_test.txt"
 
 class SuggestActionsBot(ActivityHandler):
@@ -194,12 +194,12 @@ class SuggestActionsBot(ActivityHandler):
     async def search_tableau(self, turn_context, intent):
         processed_query = self.process_query(intent)
         print('processed query', processed_query)
-
-        query_url = get_query_url(SEARCH_URL, processed_query, None)
+        
+        # query_url = get_query_url(SEARCH_URL, processed_query, None)
         empty_res = True
-        for res_title, res_url in get_search_results(query_url):
+        for res_title, res_url, res_summary in get_search_results(processed_query):
             empty_res = False
-            await turn_context.send_activity(f"[{res_title}]({res_url})")
+            await turn_context.send_activity(f"[{res_title}]({res_url})\n{res_summary}")
         await turn_context.send_activity(f"[(Show more results on Tableau site)]({query_url.replace(' ', '%20')})")
         if empty_res:
             await turn_context.send_activity(f"I didn't find anything on the Tableau Forum..")
