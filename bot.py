@@ -5,8 +5,12 @@ from botbuilder.core import ActivityHandler, TurnContext, MessageFactory
 from botbuilder.schema import ChannelAccount, CardAction, ActionTypes, SuggestedActions
 from response_strings import *
 from config import DefaultConfig
-# from search_tableau_KB import get_search_results, get_query_url
-from search_TB_on_google import get_search_results
+search_method = 'google'
+if search_method == 'google':
+    from search_TB_on_google import get_search_results
+else:
+    from search_tableau_KB import get_search_results
+
 import nltk
 
 nltk.download(['stopwords', 'punkt'])
@@ -20,7 +24,7 @@ stop += ['michael', 'mike', 'thank', 'thanks', 'hi', 'hello', 'question', 'hey',
 stop += ['assist', 'please', 'help']
 [stop.remove(w) for w in ['down', 'up']]
 
-yes_response = ['y', 'yes', 'yeah', 'sure', 'of course', 'yep', 'ok']  # TODO
+yes_response = ['y', 'yes', 'yeah', 'sure', 'of course', 'yep', 'ok']
 no_response = ['n', 'no', 'nope', 'not really', 'not exactly', 'nah', 'nothing', 'nothing else']
 
 class MyBot(ActivityHandler):
@@ -144,7 +148,7 @@ class SuggestActionsBot(ActivityHandler):
                     #     f"I will do my best to answer your questions (ง •̀_•́)ง !"
                     # )
                     MessageFactory.text(
-                    f" Hello {member.name}! This is the UTBI chatbot\n\n"
+                    f" Hi there, welcome to the UTBI chatbot!\n\n"
                     f"I will do my best to answer your questions!"
                 )
                 )
@@ -160,11 +164,11 @@ class SuggestActionsBot(ActivityHandler):
         #     return await self._send_welcome_message(turn_context)
         if intent in no_response:
             return await turn_context.send_activity("Have a nice day!")
-        elif 'training' in intent:
-            await turn_context.send_activity(
-                f"To book a Tableau training session, please go to the [ticketing system]"
-                f"(https://uthrprod.service-now.com/sp?id=sc_cat_item&sys_id=14e6cae9dbee501052e7f8f339961982) "
-                f"and select \"Tableau Training\" in request type.")
+        # elif 'training' in intent:
+        #     await turn_context.send_activity(
+        #         f"To book a Tableau training session, please go to the [ticketing system]"
+        #         f"(https://uthrprod.service-now.com/sp?id=sc_cat_item&sys_id=14e6cae9dbee501052e7f8f339961982) "
+        #         f"and select \"Tableau Training\" in request type.")
         elif 'ticketing' in intent:
             await turn_context.send_activity(
                 f"Are you looking for the [Tableau ticketing system]"
@@ -225,7 +229,7 @@ class SuggestActionsBot(ActivityHandler):
         d = {
             "server_status": f"If you have not received any email, the server should be up! If you have trouble connecting to it, you might want to check your vpn connection?",
             # "cognos_status": f"Cognos server is currently down. We apologize for the inconvenience!",
-            "access_form": "Please fill out this [form](https://easi.its.utoronto.ca/wp-content/uploads/2016/09/UTBI-Request-Form.pdf) and email it to UTBI",
+           "access_form": STR_ACCESS_FORM,
             "vpn" : STR_VPN_INSTRUCTIONS,
         }
 
@@ -249,7 +253,7 @@ class SuggestActionsBot(ActivityHandler):
             if after_feedback:
                 reply = MessageFactory.text("Thank you for your feedback, and sorry I couldn't help. Would you like to look this up on the tableau forum?")
             else:
-                reply = MessageFactory.text("Is this question about Tableau?")
+                reply = MessageFactory.text("I didn't find any answers in the UTBI knowledge base. Is this question about Tableau?")
             reply.suggested_actions = SuggestedActions(
                 actions=[
                     CardAction(

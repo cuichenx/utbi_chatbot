@@ -3,8 +3,8 @@ import requests
 from bs4 import BeautifulSoup
 
 #text = 'difference between measure and dimension in tableau' + ' site:tableau.com'
-text = 'how do i put web page in dashboard'+ ' site:tableau.com'
-text = 'how do i create a chart with 2 axes' + ' site:tableau.com'
+# text = 'how do i put web page in dashboard'+ ' site:tableau.com'
+# text = 'how do i create a chart with 2 axes' + ' site:tableau.com'
 # text = 'extract summary from google scrape beautifulsoup'
 
 def get_search_results(text, out_file=None, num_res=3):
@@ -52,6 +52,6 @@ def get_search_results(text, out_file=None, num_res=3):
 
     if out_file is not None:
         with open(out_file,"a+",encoding='utf8') as f:
-            f.writelines([r + '\n' for r in search_res])
+            f.writelines([r + '\n' for r in final_result])
     
     return final_result

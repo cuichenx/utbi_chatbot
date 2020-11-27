@@ -12,7 +12,7 @@ options = Options()
 options.add_argument("--headless")
 
 
-def get_search_results(URL, out_file=None, num_res=3):
+def get_search_results(processed_query, out_file=None, num_res=3):
     # driver = webdriver.Firefox(executable_path=r"D:\geckodriver-v0.27.0-win64\geckodriver.exe")
     if os.name == 'posix':
         driver_path = './drivers/linux64/geckodriver'
@@ -21,6 +21,7 @@ def get_search_results(URL, out_file=None, num_res=3):
     else:
         raise Exception(f"Unknown os.name: {os.name}")
     driver = webdriver.Firefox(executable_path=driver_path, firefox_options=options)
+    URL = get_query_url(SEARCH_URL, processed_query, None)
     driver.get(URL)
     wait(1, driver)
 
@@ -37,7 +38,7 @@ def get_search_results(URL, out_file=None, num_res=3):
         res_title = res.text
         if res_url in [search_res[i][1] for i in range(len(search_res))]:  # repeated entry in search results
             continue
-        search_res.append((res_title, res_url))
+        search_res.append((res_title, res_url, ''))  # third element is summary, which is empty here.
         print(res_title, res_url)
 
     if out_file is not None:
