@@ -19,6 +19,6 @@ STR_ACCESS_FORM = \
 STR_NOT_HELPFUL = \
 '''
 It looks like my suggestions haven't been helpful. Could you try to tell me what you're looking for in another way?
-Alternatively, you can get in touch with the UTBI team by 
+Alternatively, you can get in touch with the IRDG-BI team by 
 [creating a ticket here](https://uthrprod.service-now.com/sp?id=sc_cat_item&sys_id=14e6cae9dbee501052e7f8f339961982).
 '''

@@ -22,6 +22,7 @@ tokenizer = RegexpTokenizer(r'\w+')
 stop = stopwords.words('english')
 stop += ['michael', 'mike', 'thank', 'thanks', 'hi', 'hello', 'question', 'hey', 'could']
 stop += ['assist', 'please', 'help']
+stop += ['trying', 'try', 'figure', 'get', 'getting']
 [stop.remove(w) for w in ['down', 'up']]
 
 yes_response = ['y', 'yes', 'yeah', 'sure', 'of course', 'yep', 'ok']
@@ -148,7 +149,7 @@ class SuggestActionsBot(ActivityHandler):
                     #     f"I will do my best to answer your questions (ง •̀_•́)ง !"
                     # )
                     MessageFactory.text(
-                    f" Hi there, welcome to the UTBI chatbot!\n\n"
+                    f" Hi there, welcome to the IRDG-BI chatbot!\n\n"
                     f"I will do my best to answer your questions!"
                 )
                 )
@@ -253,7 +254,7 @@ class SuggestActionsBot(ActivityHandler):
             if after_feedback:
                 reply = MessageFactory.text("Thank you for your feedback, and sorry I couldn't help. Would you like to look this up on the tableau forum?")
             else:
-                reply = MessageFactory.text("I didn't find any answers in the UTBI knowledge base. Is this question about Tableau?")
+                reply = MessageFactory.text("I didn't find any answers in the IRDG-BI knowledge base. Is this question about Tableau?")
             reply.suggested_actions = SuggestedActions(
                 actions=[
                     CardAction(
@@ -309,7 +310,7 @@ class SuggestActionsBot(ActivityHandler):
                         # image_alt_text="R",
                     ),
                     CardAction(
-                        title="UTBI Access forms",
+                        title="IRDG-BI Access forms",
                         type=ActionTypes.im_back,
                         value="access_form",
                         # image="https://via.placeholder.com/20/FFFF00?text=Y",
