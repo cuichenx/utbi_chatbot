@@ -113,7 +113,7 @@ class SuggestActionsBot(ActivityHandler):
 
 
         if self.tableau and text in yes_response:
-            await turn_context.send_activity("I'm looking for answers on the Tableau Forum...")
+            await turn_context.send_activity("I'm looking for answers on the Tableau Site...")
             await self.search_tableau(turn_context, self.last_question)
             self.tableau = False
             self.multiturn_state = 'rate_SiteSearch'
