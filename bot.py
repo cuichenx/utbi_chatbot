@@ -22,11 +22,14 @@ tokenizer = RegexpTokenizer(r'\w+')
 stop = stopwords.words('english')
 stop += ['michael', 'mike', 'thank', 'thanks', 'hi', 'hello', 'question', 'hey', 'could']
 stop += ['assist', 'please', 'help']
-stop += ['trying', 'try', 'figure', 'get', 'getting']
+stop += ['trying', 'try', 'struggle', 'get', 'getting']
 [stop.remove(w) for w in ['down', 'up']]
 
 yes_response = ['y', 'yes', 'yeah', 'sure', 'of course', 'yep', 'ok']
 no_response = ['n', 'no', 'nope', 'not really', 'not exactly', 'nah', 'nothing', 'nothing else']
+
+# CLIENT_NAME = 'UTBI'
+CLIENT_NAME = 'IRDG-BI'
 
 class MyBot(ActivityHandler):
     # See https://aka.ms/about-bot-activity-message to learn more about the message and other activity types.
@@ -149,7 +152,7 @@ class SuggestActionsBot(ActivityHandler):
                     #     f"I will do my best to answer your questions (ง •̀_•́)ง !"
                     # )
                     MessageFactory.text(
-                    f" Hi there, welcome to the IRDG-BI chatbot!\n\n"
+                    f" Hi there, welcome to the {CLIENT_NAME} chatbot!\n\n"
                     f"I will do my best to answer your questions!"
                 )
                 )
@@ -172,8 +175,8 @@ class SuggestActionsBot(ActivityHandler):
         #         f"and select \"Tableau Training\" in request type.")
         elif 'ticketing' in intent:
             await turn_context.send_activity(
-                f"Are you looking for the [Tableau ticketing system]"
-                f"(https://uthrprod.service-now.com/sp?id=sc_cat_item&sys_id=14e6cae9dbee501052e7f8f339961982) ?")
+                f"If you need to get in touch with the Business Intelligence team, you can access the ticketing system here: [ServiceNow]"
+                f"(https://uthrprod.service-now.com/sp?id=sc_cat_item&sys_id=14e6cae9dbee501052e7f8f339961982)")
 
         else:
             # response = await self.qna_maker.get_answers(turn_context)
@@ -188,8 +191,10 @@ class SuggestActionsBot(ActivityHandler):
                     return await self._send_suggested_actions(turn_context, first_time=False, custom_text=txt)
                 else:  # serious question, not chitchat
                     question = response[0].questions[0]
+                    score_str = ''
+                    # score_str = f'(score {response[0].score})'
                     txt = (f"**I think you are asking about this question:** \n\n "
-                           f"{question} (score {response[0].score}) \n\n "
+                           f"{question} {score_str} \n\n "
                            f"**The answer to that is:** \n\n {response[0].answer}")
                     self.multiturn_state = 'rate_QnA'
                 await turn_context.send_activity(MessageFactory.text(txt))
@@ -198,7 +203,7 @@ class SuggestActionsBot(ActivityHandler):
                 # await turn_context.send_activity("I didn't find any answer on the UTBI KB 🤔")
 
                 if 'tableau' in intent.lower() or 'dashboard' in intent.lower():
-                    await turn_context.send_activity("I'm looking for answers on the Tableau Forum...")
+                    await turn_context.send_activity("I'm looking for answers on the Tableau Site...")
                     await self.search_tableau(turn_context, intent)
                 else:
                     self.tableau = True
@@ -252,9 +257,9 @@ class SuggestActionsBot(ActivityHandler):
 
         if self.tableau: # Tableau multiturn
             if after_feedback:
-                reply = MessageFactory.text("Thank you for your feedback, and sorry I couldn't help. Would you like to look this up on the tableau forum?")
+                reply = MessageFactory.text("Thank you for your feedback, and sorry I couldn't help. Would you like to look this up on the tableau site?")
             else:
-                reply = MessageFactory.text("I didn't find any answers in the IRDG-BI knowledge base. Is this question about Tableau?")
+                reply = MessageFactory.text(f"I didn't find any answers in the {CLIENT_NAME} knowledge base. Is this question about Tableau?")
             reply.suggested_actions = SuggestedActions(
                 actions=[
                     CardAction(
@@ -310,7 +315,7 @@ class SuggestActionsBot(ActivityHandler):
                         # image_alt_text="R",
                     ),
                     CardAction(
-                        title="IRDG-BI Access forms",
+                        title=f"{CLIENT_NAME} Access forms",
                         type=ActionTypes.im_back,
                         value="access_form",
                         # image="https://via.placeholder.com/20/FFFF00?text=Y",
